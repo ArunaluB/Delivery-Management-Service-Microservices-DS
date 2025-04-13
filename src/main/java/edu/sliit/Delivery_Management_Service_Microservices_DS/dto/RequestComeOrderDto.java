@@ -1,23 +1,19 @@
-package edu.sliit.Delivery_Management_Service_Microservices_DS.document;
+package edu.sliit.Delivery_Management_Service_Microservices_DS.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
 import java.util.Map;
 
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-@Document(collection = "customer_order")
-public class Order {
-    @Id
-    private String id;
+@AllArgsConstructor
+public class RequestComeOrderDto {
+
     private String orderId;
-    private String driverId;
     private String customerName;
     private String customerPhone;
     private String shop;
@@ -27,8 +23,5 @@ public class Order {
     private double customerLat;
     private double customerLng;
     private double amount;
-    private double distance;
     private Map<String, Integer> items;
-    private String status ;
-    private Date createdAt;
 }

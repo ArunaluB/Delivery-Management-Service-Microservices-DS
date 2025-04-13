@@ -15,6 +15,8 @@ public class Driver {
     private String id;
     private String name;
     private String email;
+    private double latitude;
+    private double longitude;
     private String licenseNumber;
     private String Nic;
     private String vehicleType;

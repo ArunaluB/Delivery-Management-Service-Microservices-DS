@@ -1,5 +1,4 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
-
 import edu.sliit.Delivery_Management_Service_Microservices_DS.document.Driver;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.driverAvailableUpdateDto;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.requestDriverDto;
@@ -52,4 +51,15 @@ public class DriverServiceImpl implements DriverService {
         driverRepository.save(driver);
         return availableUpdateDto;
     }
+
+    @Override
+    public void updateDriverLocation(String driverId, double lat, double lng) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
+
+        driver.setLatitude(lat);
+        driver.setLongitude(lng);
+        driverRepository.save(driver);
+    }
+
 }
