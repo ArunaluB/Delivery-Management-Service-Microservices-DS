@@ -30,5 +30,7 @@ public class Order {
     private double distance;
     private Map<String, Integer> items;
     private String status ;
+    private double distanceToShop;
+    private double estimatedTimeToShop;
     private Date createdAt;
 }

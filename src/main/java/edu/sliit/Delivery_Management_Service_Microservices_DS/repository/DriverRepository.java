@@ -9,6 +9,6 @@ import java.util.List;
 
 @Repository
 public interface DriverRepository extends MongoRepository<Driver, String> {
-    @Query(value = "{ 'available': true }", fields = "{ '_id': 1, 'name': 1 }")
-    List<Driver> findAvailableDriversWithIdAndNameOnly();
+      @Query(value = "{ 'available': true }", fields = "{ '_id': 1, 'name': 1, 'latitude': 1, 'longitude': 1 }")
+      List<Driver> findAvailableDriversWithIdAndNameOnly();
 }

@@ -14,3 +14,7 @@ server:
     include-exception: true
     include-message: always
 
+mapbox:
+  api:
+    key: pk.eyJ1IjoiYXJ1bmFsdSIsImEiOiJjbTllZ3ZleHUxZWlxMmxzN3hyMmlxaXBjIn0.88xrwVeZkSlah-fUY3_3BA
+    enabled: true

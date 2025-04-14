@@ -1,4 +1,5 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.DriverController;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.document.Driver;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.driverAvailableUpdateDto;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.requestDriverDto;
@@ -8,6 +9,8 @@ import edu.sliit.Delivery_Management_Service_Microservices_DS.repository.DriverR
 import edu.sliit.Delivery_Management_Service_Microservices_DS.service.DriverService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +22,8 @@ public class DriverServiceImpl implements DriverService {
 
     private final DriverRepository driverRepository;
     private final ModelMapper modelMapper;
+    private static final Logger logger = LoggerFactory.getLogger(DriverController.class);
+
 
     @Override
     public responseDriverDto createDriver(requestDriverDto requestDriverDto) {
@@ -40,7 +45,8 @@ public class DriverServiceImpl implements DriverService {
         return driverRepository.findAvailableDriversWithIdAndNameOnly().stream()
                 .map(driver -> modelMapper.map(driver, responseDriverAvailableDto.class))
                 .collect(Collectors.toList());
-    }
+   }
+
 
     @Override
     public driverAvailableUpdateDto updateDriverAvailable(driverAvailableUpdateDto availableUpdateDto) {
@@ -57,8 +63,8 @@ public class DriverServiceImpl implements DriverService {
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
 
-        driver.setLatitude(lat);
-        driver.setLongitude(lng);
+        driver.setLatitude((lat));
+        driver.setLongitude((lng));
         driverRepository.save(driver);
     }
 
