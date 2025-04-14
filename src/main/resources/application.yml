@@ -1,10 +1,18 @@
 spring:
   application:
     name: Delivery-Management-Service-Microservices-DS
-  data:
-    mongodb:
-      uri: mongodb+srv://arunalubamunusinghe75:Arunalu123@cluster0.n5poqff.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-      database: DriverManager
+  datasource:
+    url: jdbc:postgresql://localhost:5432/driver_manager_db
+    username: postgres
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   port: 8080

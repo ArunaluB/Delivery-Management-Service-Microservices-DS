@@ -7,9 +7,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class responseDriverAvailableDto {
-    private Long id;
-    private String name;
-    private double latitude;
-    private double longitude;
+public class DriverOrderResponse {
+    private String orderId;
+    private Long driverId;
+    private boolean accepted;
 }

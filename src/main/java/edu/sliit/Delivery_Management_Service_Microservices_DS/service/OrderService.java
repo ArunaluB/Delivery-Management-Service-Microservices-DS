@@ -7,4 +7,5 @@ import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.RequestComeOrd
 public interface OrderService {
     String processOrder(RequestComeOrderDto requestComeOrderDto);
     Order updateOrderStatus(Order order, OrderStatus status);
+    void handleDriverResponse(String orderId, Long driverId, boolean accepted);
 };

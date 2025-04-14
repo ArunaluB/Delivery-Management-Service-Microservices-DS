@@ -376,6 +376,7 @@ import edu.sliit.Delivery_Management_Service_Microservices_DS.repository.OrderRe
 import edu.sliit.Delivery_Management_Service_Microservices_DS.service.DriverService;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.service.OrderService;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.utils.MapboxService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.LoggerFactory;
@@ -403,6 +404,17 @@ public class OrderServiceImpl implements OrderService {
 
     // Map to track pending driver confirmations
     private final Map<String, CompletableFuture<Boolean>> driverResponses = new ConcurrentHashMap<>();
+
+    @PostConstruct
+    public void setupModelMapper() {
+        modelMapper.createTypeMap(RequestComeOrderDto.class, Order.class)
+                .addMappings(mapper -> {
+                    // Skip the id field mapping
+                    mapper.skip(Order::setId);
+                    // Ensure orderId maps correctly
+                    mapper.map(RequestComeOrderDto::getOrderId, Order::setOrderId);
+                });
+    }
 
     @Override
     public String processOrder(RequestComeOrderDto requestComeOrderDto) {
@@ -485,7 +497,7 @@ public class OrderServiceImpl implements OrderService {
             }
 
             boolean orderAssigned = false;
-            Set<String> rejectedDriverIds = new HashSet<>();
+            Set<Long> rejectedDriverIds = new HashSet<>();
 
             for (DriverDistanceInfo driverInfo : nearbyDrivers) {
                 responseDriverAvailableDto driver = driverInfo.getDriver();
@@ -565,6 +577,24 @@ public class OrderServiceImpl implements OrderService {
         messagingTemplate.convertAndSend("/topic/orders/" + order.getId() + "/status", status);
 
         return savedOrder;
+    }
+
+    /**
+     * Handle response from driver about accepting/rejecting an order
+     */
+    @Override
+    public void handleDriverResponse(String orderId, Long driverId, boolean accepted) {
+        // Create the response key that matches what's used in assignDriverToOrder
+        String responseKey = "order-" + orderId + "-driver-" + driverId;
+
+        CompletableFuture<Boolean> responseFuture = driverResponses.get(responseKey);
+        if (responseFuture != null) {
+            // Complete the future with the driver's response
+            responseFuture.complete(accepted);
+            logger.info("Completed response future for key: {}", responseKey);
+        } else {
+            logger.warn("No pending response future found for key: {}", responseKey);
+        }
     }
 
     /**

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class driverAvailableUpdateDto {
-    private String id;
+    private Long id;
     private String name;
     private boolean available;
 }
