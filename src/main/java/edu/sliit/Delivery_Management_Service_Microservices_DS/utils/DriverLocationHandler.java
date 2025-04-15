@@ -36,7 +36,7 @@ public class DriverLocationHandler extends TextWebSocketHandler {
                     locationUpdate.getLongitude()
             );
 
-            driverService.updateDriverLocation(
+            driverService.updateOrderStatusComplted(
                     locationUpdate.getDriverId(),
                     locationUpdate.getLatitude(),
                     locationUpdate.getLongitude()

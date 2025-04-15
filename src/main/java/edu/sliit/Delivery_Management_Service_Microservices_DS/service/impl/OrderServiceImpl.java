@@ -597,6 +597,17 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+    @Override
+    public void updateOrderStatusComplted(long Id, String status) {
+        logger.info("Updating order {} status to {}", Id, status);
+        Order order = orderRepository.findById(Id)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + Id));
+        logger.info("Updating order {} status to {}", Id, status);
+        order.setStatus(status);
+        orderRepository.save(order);
+        logger.info("Order {} status updated to {} by driver {}", Id, status);
+    }
+
     /**
      * Handle driver responses to order assignments
      */

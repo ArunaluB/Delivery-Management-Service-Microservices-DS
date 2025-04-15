@@ -1,6 +1,8 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.controller;
 
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.DriverOrderResponse;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.DriverResponseDto;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.OrderResponseDto;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.RequestComeOrderDto;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,10 @@ public class OrderController {
         );
     }
 
-
-
+    @MessageMapping("/orders/driver-response")
+    public void handleDriverResponse(OrderResponseDto response) {
+        logger.info("Received driver response for order {}: accepted={}",
+                response.getId());
+        orderService.updateOrderStatusComplted(response.getId(),response.getStatus());
+    }
 }

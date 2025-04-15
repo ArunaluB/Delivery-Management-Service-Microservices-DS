@@ -12,6 +12,6 @@ public interface DriverService {
     List<responseDriverDto> getAllDrivers();
     List<responseDriverAvailableDto> getAvailableDrivers();
     driverAvailableUpdateDto updateDriverAvailable(driverAvailableUpdateDto availableUpdateDto);
-    void updateDriverLocation(Long driverId, double lat, double lng);
+    void updateOrderStatusComplted(Long driverId, double lat, double lng);
 
 }

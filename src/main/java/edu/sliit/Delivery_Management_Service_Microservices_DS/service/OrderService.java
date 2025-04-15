@@ -8,4 +8,5 @@ public interface OrderService {
     String processOrder(RequestComeOrderDto requestComeOrderDto);
     Order updateOrderStatus(Order order, OrderStatus status);
     void handleDriverResponse(String orderId, Long driverId, boolean accepted);
+    void updateOrderStatusComplted(long Id, String status);
 };

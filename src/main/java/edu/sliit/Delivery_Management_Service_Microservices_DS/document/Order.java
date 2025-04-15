@@ -21,9 +21,7 @@ public class Order {
 
 
     private String orderId;
-
     private Long driverId;
-
     private String customerName;
     private String customerPhone;
     private String shop;

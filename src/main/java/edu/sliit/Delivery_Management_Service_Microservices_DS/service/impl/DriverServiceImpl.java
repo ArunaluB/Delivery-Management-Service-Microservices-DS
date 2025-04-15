@@ -59,7 +59,7 @@ public class DriverServiceImpl implements DriverService {
     }
 
     @Override
-    public void updateDriverLocation(Long driverId, double lat, double lng) {
+    public void updateOrderStatusComplted(Long driverId, double lat, double lng) {
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Driver not found with id: " + driverId));
 
