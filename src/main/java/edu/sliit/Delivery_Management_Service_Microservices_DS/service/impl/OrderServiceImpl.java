@@ -2,7 +2,7 @@
 //
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.config.OrderStatus;
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.OrderController;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.document.Order;
+//import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Order;
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.RequestComeOrderDto;
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.repository.OrderRepository;
@@ -193,7 +193,7 @@
 //
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.config.OrderStatus;
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.OrderController;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.document.Order;
+//import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Order;
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.RequestComeOrderDto;
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.DriverResponseDto;
 //import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;
@@ -368,15 +368,14 @@ package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
 
 import edu.sliit.Delivery_Management_Service_Microservices_DS.config.OrderStatus;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.OrderController;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.document.Order;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.RequestComeOrderDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.DriverResponseDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Order;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.*;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.repository.OrderRepository;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.service.DriverService;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.service.OrderService;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.utils.MapboxService;
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.LoggerFactory;
@@ -386,8 +385,11 @@ import org.slf4j.Logger;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -607,6 +609,85 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.save(order);
         logger.info("Order {} status updated to {} by driver {}", Id, status);
     }
+
+    @Override
+    @Transactional
+    public void updateOrderDetails(long Id, double distances, double distanceToShop, double estimatedTimeToShop) {
+        logger.info("Updating order updateorder details {} details to {}", Id, distances);
+        Order order = orderRepository.findById(Id)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + Id));
+        logger.info("Updating order {} status to {}", Id,distanceToShop, estimatedTimeToShop);
+        order.setDistance(distances);
+        order.setDistanceToShop(distanceToShop);
+        order.setEstimatedTimeToShop(estimatedTimeToShop);
+        orderRepository.save(order);
+        logger.info("Order {} details updated to {}", Id, distances);
+    }
+
+    @Override
+    public List<OrderDto> getDeliveredOrRejectedOrdersByDriverId(Long driverId) {
+        List<Order> orders = orderRepository.findByDriverIdAndStatusIn(
+                driverId, List.of("DELIVERED", "REJECTED")
+        );
+
+        return orders.stream()
+                .map(order -> modelMapper.map(order, OrderDto.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public OrderSummaryResponseDto getOrderSummaryByDriver(Long driverId) {
+        List<Order> orders = orderRepository.findByDriverIdAndStatusIn(
+                driverId, List.of("DELIVERED", "REJECTED")
+        );
+        LocalDate now = LocalDate.now();
+
+        Map<Integer, DailySummaryDto> dailyTrips = new HashMap<>();
+        Map<Integer, MonthlySummaryDto> monthlyTrips = new HashMap<>();
+        int totalOrders = 0;
+        double totalEarnings = 0.0;
+        double totalDistance = 0.0;
+
+        for (Order order : orders) {
+            if (order.getCreatedAt() == null || !driverId.equals(order.getDriverId())) continue;
+
+            LocalDate createdDate = order.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            int year = createdDate.getYear();
+            int month = createdDate.getMonthValue();
+            int day = createdDate.getDayOfMonth();
+
+            // Monthly summary (current year)
+            if (year == now.getYear()) {
+                MonthlySummaryDto monthly = monthlyTrips.getOrDefault(month, new MonthlySummaryDto(0, 0.0, 0.0));
+                monthly.setTripCount(monthly.getTripCount() + 1);
+                monthly.setTotalEarnings(monthly.getTotalEarnings() + order.getAmount());
+                monthly.setTotalDistance(monthly.getTotalDistance() + order.getDistance());
+                monthlyTrips.put(month, monthly);
+            }
+
+            // Daily summary (current month & year)
+            if (month == now.getMonthValue() && year == now.getYear()) {
+                DailySummaryDto daily = dailyTrips.getOrDefault(day, new DailySummaryDto(0, 0.0, 0.0));
+                daily.setTripCount(daily.getTripCount() + 1);
+                daily.setTotalEarnings(daily.getTotalEarnings() + order.getAmount());
+                daily.setTotalDistance(daily.getTotalDistance() + order.getDistance());
+                dailyTrips.put(day, daily);
+            }
+
+            totalOrders++;
+            totalEarnings += order.getAmount();
+            totalDistance += order.getDistance();
+        }
+
+        return new OrderSummaryResponseDto(
+                totalOrders,
+                totalEarnings,
+                totalDistance,
+                dailyTrips,
+                monthlyTrips
+        );
+    }
+
 
     /**
      * Handle driver responses to order assignments

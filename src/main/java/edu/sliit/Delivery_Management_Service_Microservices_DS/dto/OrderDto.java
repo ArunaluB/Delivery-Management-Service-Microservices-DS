@@ -1,6 +1,5 @@
-package edu.sliit.Delivery_Management_Service_Microservices_DS.document;
+package edu.sliit.Delivery_Management_Service_Microservices_DS.dto;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,15 +10,8 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "customer_order")
-public class Order {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class OrderDto {
     private Long id;
-
-
     private String orderId;
     private Long driverId;
     private String customerName;
@@ -32,17 +24,9 @@ public class Order {
     private double customerLng;
     private double amount;
     private double distance;
-
-    @ElementCollection
-    @CollectionTable(name = "order_items", joinColumns = @JoinColumn(name = "order_id"))
-    @MapKeyColumn(name = "item_name")
-    @Column(name = "quantity")
     private Map<String, Integer> items;
-
     private String status;
     private double distanceToShop;
     private double estimatedTimeToShop;
-
-    @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 }

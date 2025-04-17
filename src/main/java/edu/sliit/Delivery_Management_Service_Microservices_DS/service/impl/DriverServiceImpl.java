@@ -1,6 +1,6 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.DriverController;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.document.Driver;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Driver;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.driverAvailableUpdateDto;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.requestDriverDto;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;

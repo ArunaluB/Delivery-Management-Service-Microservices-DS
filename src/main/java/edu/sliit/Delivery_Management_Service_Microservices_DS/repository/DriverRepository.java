@@ -1,6 +1,6 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.repository;
 
-import edu.sliit.Delivery_Management_Service_Microservices_DS.document.Driver;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Driver;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

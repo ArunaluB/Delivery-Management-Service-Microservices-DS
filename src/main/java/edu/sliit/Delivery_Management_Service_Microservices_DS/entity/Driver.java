@@ -1,4 +1,4 @@
-package edu.sliit.Delivery_Management_Service_Microservices_DS.document;
+package edu.sliit.Delivery_Management_Service_Microservices_DS.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
