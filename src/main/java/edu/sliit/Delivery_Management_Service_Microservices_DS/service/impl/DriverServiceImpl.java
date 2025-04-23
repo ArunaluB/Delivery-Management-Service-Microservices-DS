@@ -1,10 +1,7 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.DriverController;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.*;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Driver;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.driverAvailableUpdateDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.requestDriverDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverDto;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.repository.DriverRepository;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.service.DriverService;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +43,15 @@ public class DriverServiceImpl implements DriverService {
                 .map(driver -> modelMapper.map(driver, responseDriverAvailableDto.class))
                 .collect(Collectors.toList());
    }
+
+    @Override
+    public usernameDriverResponse getUsernameDrivers(String username) {
+        Driver driver = driverRepository.findByUsername(username);
+        if (driver == null) {
+            return null;
+        }
+        return modelMapper.map(driver, usernameDriverResponse.class);
+    }
 
 
     @Override

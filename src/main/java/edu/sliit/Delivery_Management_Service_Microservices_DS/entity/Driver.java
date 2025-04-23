@@ -24,4 +24,24 @@ public class Driver {
     private String registrationNumber;
     private String phoneNumber;
     private boolean available;
+    private String username;
+    private String firstName;
+    private String lastName;
+    private String vehicleNo;
+    private String licencePlate;
+    private String licenceNumber;
+    private String licenceExpiryDate;
+    private String password;
+    private String profileImage;
+    private String addressTestimony;
+    private String licenseImagePathFront;
+    private String licenseImagePathBack;
+    private String nicImagePathFront;
+    private String nicImagePathBack;
+    private String vehicleFrontPath;
+    private String vehicleRearPath;
+    private String vehicleSidePath;
+    private String vehicleColor;
+    private boolean isVerified = false;
+
 }

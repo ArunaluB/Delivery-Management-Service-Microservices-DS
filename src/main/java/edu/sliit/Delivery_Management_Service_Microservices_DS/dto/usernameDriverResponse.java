@@ -9,7 +9,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class driverAvailableUpdateDto {
+public class usernameDriverResponse {
     private Long id;
-    private boolean available;
+    private String name;
+    private String email;
+    private String phoneNumber;
+    private String username;
+    private String profileImage;
+    private boolean isVerified = false;
+
 }

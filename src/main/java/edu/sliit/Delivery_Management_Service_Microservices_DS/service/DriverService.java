@@ -1,9 +1,6 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.service;
 
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.driverAvailableUpdateDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.requestDriverDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverDto;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.*;
 
 import java.util.List;
 
@@ -13,5 +10,6 @@ public interface DriverService {
     List<responseDriverAvailableDto> getAvailableDrivers();
     driverAvailableUpdateDto updateDriverAvailable(driverAvailableUpdateDto availableUpdateDto);
     void updateOrderStatusComplted(Long driverId, double lat, double lng);
+    usernameDriverResponse getUsernameDrivers(String username);
 
 }

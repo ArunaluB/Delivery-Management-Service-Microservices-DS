@@ -24,7 +24,6 @@ public class DriverLocationHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         try {
-            // Parse incoming message
             DriverLocationDto locationUpdate = objectMapper.readValue(
                     message.getPayload(),
                     DriverLocationDto.class

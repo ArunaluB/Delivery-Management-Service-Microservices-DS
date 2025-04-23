@@ -20,15 +20,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Enable a simple memory-based message broker to send messages to clients
-        // Prefix for messages that are bound for @MessageMapping methods
         registry.setApplicationDestinationPrefixes("/app");
-
-        // Prefix for messages that are bound for the broker (client subscribes)
         registry.enableSimpleBroker("/topic", "/queue");
-
-        // Use /queue for user-specific messages (like order assignments)
-        // Use /topic for broadcast messages
     }
 
     @Override
@@ -41,12 +34,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer, WebSoc
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // Register driver location handler for raw WebSocket communication
         registry.addHandler(driverLocationHandler, "/ws/driver-location")
                 .setAllowedOrigins("*");
     }
 
-    // Complete the missing autowiring in OrderServiceImpl
     @Bean
     public WebSocketHandler driverLocationWebSocketHandler(DriverLocationHandler handler) {
         return handler;

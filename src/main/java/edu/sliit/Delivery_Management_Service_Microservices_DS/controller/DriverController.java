@@ -1,9 +1,6 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.controller;
 
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.driverAvailableUpdateDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.requestDriverDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;
-import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverDto;
+import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.*;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.service.DriverService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +20,7 @@ public class DriverController {
     @PostMapping
     public ResponseEntity<responseDriverDto> createDriver(@RequestBody requestDriverDto requestDriverDto) {
         responseDriverDto createdDriver = driverService.createDriver(requestDriverDto);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(createdDriver);
     }
 
@@ -38,9 +36,17 @@ public class DriverController {
         return ResponseEntity.ok(availableDrivers);
     }
 
+    @GetMapping("/username")
+    public ResponseEntity<usernameDriverResponse> getUsernameDrivers(@RequestBody String username) {
+        usernameDriverResponse availableDrivers = driverService.getUsernameDrivers(username);
+        return ResponseEntity.ok(availableDrivers);
+    }
+
     @PutMapping("/available")
+   // @MessageMapping("/driver/driver-available")
     public ResponseEntity<driverAvailableUpdateDto> updateDriverAvailable(@RequestBody driverAvailableUpdateDto availableUpdateDto) {
         driverAvailableUpdateDto updated = driverService.updateDriverAvailable(availableUpdateDto);
         return ResponseEntity.ok(updated);
     }
+
 }

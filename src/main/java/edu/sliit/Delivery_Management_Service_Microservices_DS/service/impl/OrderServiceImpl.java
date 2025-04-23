@@ -1,369 +1,3 @@
-//package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
-//
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.config.OrderStatus;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.OrderController;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Order;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.RequestComeOrderDto;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.repository.OrderRepository;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.service.DriverService;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.service.OrderService;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.utils.MapboxService;
-//import lombok.RequiredArgsConstructor;
-//import org.modelmapper.ModelMapper;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.messaging.simp.SimpMessagingTemplate;
-//import org.springframework.stereotype.Service;
-//import org.slf4j.Logger;
-//
-//import java.util.*;
-//import java.util.concurrent.*;
-//import java.util.concurrent.atomic.AtomicBoolean;
-//
-//@Service
-//@RequiredArgsConstructor
-//public class OrderServiceImpl implements OrderService {
-//
-//    private final OrderRepository orderRepository;
-//    private final DriverService driverService;
-//    private final ModelMapper modelMapper;
-//    private final SimpMessagingTemplate messagingTemplate;
-//    private final MapboxService mapboxService;
-//    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
-//    private static final int DRIVER_RESPONSE_TIMEOUT = 45;
-//    private final ExecutorService executorService = Executors.newCachedThreadPool();
-//
-//    @Override
-//    public String processOrder(RequestComeOrderDto requestComeOrderDto) {
-//        logger.info("Received new order: {}", requestComeOrderDto);
-//        Order order = modelMapper.map(requestComeOrderDto, Order.class);
-//
-//        // Save the initial order with PENDING status
-//        order.setStatus(String.valueOf(OrderStatus.PENDING));
-//        order.setCreatedAt(new Date());
-//        Order savedOrder = orderRepository.save(order);
-//
-//        // call assign driver async method
-//        CompletableFuture.runAsync(() -> assignDriverToOrder(savedOrder), executorService);
-//        return "Order processed successfully";
-//    }
-//
-//
-//    private void assignDriverToOrder(Order order) {
-//        logger.info("Starting driver assignment for order: {}", order.getId());
-//        try {
-//            List<responseDriverAvailableDto> availableDrivers = driverService.getAvailableDrivers();
-//
-//            if (availableDrivers.isEmpty()) {
-//                logger.warn("No available drivers found for order: {}", order.getOrderId());
-//                updateOrderStatus(order, OrderStatus.NO_DRIVER_AVAILABLE);
-//                return;
-//            }
-//
-//            double shopLat = order.getShopLat();
-//            double shopLng = order.getShopLng();
-//
-//            // Calculate and sort drivers by distance to shop
-//            Map<responseDriverAvailableDto, Double> driverDistances = new HashMap<>();
-//            for (responseDriverAvailableDto driver : availableDrivers) {
-//                double distance = mapboxService.calculateDistance(
-//                        shopLat,
-//                        shopLng,
-//                        driver.getLatitude(),
-//                        driver.getLongitude()
-//                );
-//                driverDistances.put(driver, distance);
-//                logger.info("Driver {} is {} km from shop", driver.getId(), distance);
-//            }
-//            // Sort drivers by distance (closest first)
-//            ArrayList<responseDriverAvailableDto> sortedDrivers = new ArrayList<>(availableDrivers);
-//            sortedDrivers.sort(Comparator.comparing(driverDistances::get));
-//
-//
-//            boolean orderAssigned = false;
-//            Set<Long> rejectedDriverIds = new HashSet<>();
-//
-//            while (!orderAssigned && !sortedDrivers.isEmpty()) {
-//                Optional<responseDriverAvailableDto> closestDriverOpt = sortedDrivers.stream()
-//                        .filter(d -> !rejectedDriverIds.contains(d.getId()))
-//                        .findFirst();
-//                if (closestDriverOpt.isEmpty()) break;
-//                responseDriverAvailableDto closestDriver = closestDriverOpt.get();
-//
-//                updateOrderStatus(order, OrderStatus.DRIVER_ASSIGNMENT_IN_PROGRESS);
-//
-//                String driverDestination = "/queue/driver/" + closestDriver.getId() + "/orders";
-//                messagingTemplate.convertAndSend(driverDestination, order);
-//                orderAssigned = waitForDriverResponse(order, closestDriver, rejectedDriverIds);
-//            }
-//
-//            if (!orderAssigned) {
-//                logger.warn("No driver accepted order: {}", order.getId());
-//                updateOrderStatus(order, OrderStatus.NO_DRIVER_ACCEPTED);
-//            }
-//
-//        } catch (Exception e) {
-//            logger.error("Error during driver assignment for order: " + order.getId(), e);
-//            updateOrderStatus(order, OrderStatus.ERROR);
-//        }
-//    }
-//
-//
-//    @Override
-//    public Order updateOrderStatus(Order order, OrderStatus status) {
-//        logger.info("Updating order {} status to {}", order.getId(), status);
-//        order.setStatus(String.valueOf(status));
-//        Order savedOrder = orderRepository.save(order);
-//        return savedOrder;
-//    }
-//
-//    private boolean waitForDriverResponse(Order order, responseDriverAvailableDto driver, Set<Long> rejectedDriverIds) {
-//        // Create a CountDownLatch to wait for the driver's response
-//        CountDownLatch responseLatch = new CountDownLatch(1);
-//        AtomicBoolean accepted = new AtomicBoolean(false);
-//
-//        // Subscribe to driver's response channel
-//        String responseDestination = "/topic/driver/" + driver.getId() + "/response";
-//
-//        // Set up a temporary subscription to listen for the driver's response
-//        // This is simplified; in a real application, you would need to set up a proper message listener
-//        // Here we're simulating the WebSocket subscription process
-//
-//        // Start a timeout task
-//        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-//        ScheduledFuture<?> timeoutTask = scheduler.schedule(() -> {
-//            logger.info("Driver {} timed out for order {}", driver.getId(), order.getId());
-//            rejectedDriverIds.add(Long.valueOf(driver.getId()));
-//            responseLatch.countDown();
-//        }, DRIVER_RESPONSE_TIMEOUT, TimeUnit.SECONDS);
-//
-//        // This would be handled by your WebSocket configuration in a real application
-//        // For this example, we'll set up a mock listener that simulates receiving a message
-//        messagingTemplate.setUserDestinationPrefix("/topic/driver/" + driver.getId());
-//
-//        // In a real application, this would be triggered by a message from the driver's client
-//        // For now, we'll just simulate a driver response handler
-//        CompletableFuture.runAsync(() -> {
-//            try {
-//                // Wait for actual response from driver
-//                // This is where your actual WebSocket subscription would receive a message
-//
-//                // Assuming we received a message (for demonstration)
-//                // In a real application, this would be triggered by an actual WebSocket message
-//
-//                // This is just for demonstration purposes
-//                // In a real application, wait for the actual driver response
-//
-//                // If the driver accepted
-//                if (Math.random() > 0.5) { // Simulate acceptance (50% chance)
-//                    accepted.set(true);
-//                    updateOrderStatus(order, OrderStatus.ACCEPTED);
-//                    order.setDriverId(driver.getId());
-//                } else {
-//                    // Driver rejected
-//                    rejectedDriverIds.add(Long.valueOf(driver.getId()));
-//                }
-//
-//                // Cancel the timeout task since we got a response
-//                timeoutTask.cancel(false);
-//                responseLatch.countDown();
-//
-//            } catch (Exception e) {
-//                logger.error("Error processing driver response", e);
-//                timeoutTask.cancel(false);
-//                responseLatch.countDown();
-//            }
-//        });
-//
-//        try {
-//            // Wait for either a response or timeout
-//            responseLatch.await();
-//        } catch (InterruptedException e) {
-//            logger.error("Interrupted while waiting for driver response", e);
-//            Thread.currentThread().interrupt();
-//        } finally {
-//            scheduler.shutdown();
-//        }
-//
-//        return accepted.get();
-//    }
-//}
-//
-//package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
-//
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.config.OrderStatus;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.OrderController;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Order;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.RequestComeOrderDto;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.DriverResponseDto;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.dto.responseDriverAvailableDto;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.repository.OrderRepository;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.service.DriverService;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.service.OrderService;
-//import edu.sliit.Delivery_Management_Service_Microservices_DS.utils.MapboxService;
-//import lombok.RequiredArgsConstructor;
-//import org.modelmapper.ModelMapper;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.messaging.simp.SimpMessagingTemplate;
-//import org.springframework.stereotype.Service;
-//import org.slf4j.Logger;
-//import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-//import org.springframework.messaging.handler.annotation.MessageMapping;
-//import org.springframework.messaging.handler.annotation.Payload;
-//
-//import java.util.*;
-//import java.util.concurrent.*;
-//
-//@Service
-//@RequiredArgsConstructor
-//public class OrderServiceImpl implements OrderService {
-//
-//    private final OrderRepository orderRepository;
-//    private final DriverService driverService;
-//    private final ModelMapper modelMapper;
-//    private final SimpMessagingTemplate messagingTemplate;
-//    private final MapboxService mapboxService;
-//    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
-//    private static final int DRIVER_RESPONSE_TIMEOUT = 45;
-//    private final ExecutorService executorService = Executors.newCachedThreadPool();
-//
-//    // Map to track pending driver confirmations
-//    private final Map<String, CompletableFuture<Boolean>> driverResponses = new ConcurrentHashMap<>();
-//
-//    @Override
-//    public String processOrder(RequestComeOrderDto requestComeOrderDto) {
-//        logger.info("Received new order: {}", requestComeOrderDto);
-//        Order order = modelMapper.map(requestComeOrderDto, Order.class);
-//
-//        // Save the initial order with PENDING status
-//        order.setStatus(String.valueOf(OrderStatus.PENDING));
-//        order.setCreatedAt(new Date());
-//        Order savedOrder = orderRepository.save(order);
-//
-//        // call assign driver async method
-//        CompletableFuture.runAsync(() -> assignDriverToOrder(savedOrder), executorService);
-//        return "Order processed successfully";
-//    }
-//
-//    private void assignDriverToOrder(Order order) {
-//        logger.info("Starting driver assignment for order: {}", order.getId());
-//        try {
-//            List<responseDriverAvailableDto> availableDrivers = driverService.getAvailableDrivers();
-//
-//            if (availableDrivers.isEmpty()) {
-//                logger.warn("No available drivers found for order: {}", order.getOrderId());
-//                updateOrderStatus(order, OrderStatus.NO_DRIVER_AVAILABLE);
-//                return;
-//            }
-//
-//            double shopLat = order.getShopLat();
-//            double shopLng = order.getShopLng();
-//
-//            // Calculate and sort drivers by distance to shop
-//            Map<responseDriverAvailableDto, Double> driverDistances = new HashMap<>();
-//            for (responseDriverAvailableDto driver : availableDrivers) {
-//                double distance = mapboxService.calculateDistance(
-//                        shopLat,
-//                        shopLng,
-//                        driver.getLatitude(),
-//                        driver.getLongitude()
-//                );
-//                driverDistances.put(driver, distance);
-//                logger.info("Driver {} is {} km from shop", driver.getId(), distance);
-//            }
-//            logger.info("Driver assigned distances: {}", driverDistances);
-//            // Sort drivers by distance (closest first)
-//            List<responseDriverAvailableDto> sortedDrivers = new ArrayList<>(availableDrivers);
-//            sortedDrivers.sort(Comparator.comparing(driverDistances::get));
-//
-//            boolean orderAssigned = false;
-//            Set<String> rejectedDriverIds = new HashSet<>();
-//
-//            for (responseDriverAvailableDto driver : sortedDrivers) {
-//                if (rejectedDriverIds.contains(driver.getId())) {
-//                    continue;
-//                }
-//
-//                updateOrderStatus(order, OrderStatus.DRIVER_ASSIGNMENT_IN_PROGRESS);
-//
-//                // Unique key for tracking this specific order-driver assignment attempt
-//                String responseKey = "order-" + order.getId() + "-driver-" + driver.getId();
-//                CompletableFuture<Boolean> responseFuture = new CompletableFuture<>();
-//                driverResponses.put(responseKey, responseFuture);
-//
-//                // Send order to driver
-//                String driverDestination = "/queue/driver/" + driver.getId() + "/orders";
-//                logger.info("Sending order {} to driver {}", order.getId(), driver.getId());
-//                messagingTemplate.convertAndSend(driverDestination, order);
-//
-//                try {
-//                    // Wait for driver response with timeout
-//                    Boolean accepted = responseFuture.get(DRIVER_RESPONSE_TIMEOUT, TimeUnit.SECONDS);
-//
-//                    if (accepted) {
-//                        // Driver accepted the order
-//                        order.setDriverId(driver.getId());
-//                        updateOrderStatus(order, OrderStatus.ACCEPTED);
-//                        orderAssigned = true;
-//                        logger.info("Driver {} accepted order {}", driver.getId(), order.getId());
-//                        break;
-//                    } else {
-//                        // Driver explicitly rejected
-//                        rejectedDriverIds.add(driver.getId());
-//                        logger.info("Driver {} rejected order {}", driver.getId(), order.getId());
-//                    }
-//                } catch (TimeoutException e) {
-//                    // Driver didn't respond in time
-//                    rejectedDriverIds.add(driver.getId());
-//                    logger.info("Driver {} timed out for order {}", driver.getId(), order.getId());
-//                } finally {
-//                    // Clean up
-//                    driverResponses.remove(responseKey);
-//                }
-//            }
-//
-//            if (!orderAssigned) {
-//                logger.warn("No driver accepted order: {}", order.getId());
-//                updateOrderStatus(order, OrderStatus.NO_DRIVER_ACCEPTED);
-//            }
-//
-//        } catch (Exception e) {
-//            logger.error("Error during driver assignment for order: " + order.getId(), e);
-//            updateOrderStatus(order, OrderStatus.ERROR);
-//        }
-//    }
-//
-//    @Override
-//    public Order updateOrderStatus(Order order, OrderStatus status) {
-//        logger.info("Updating order {} status to {}", order.getId(), status);
-//        order.setStatus(String.valueOf(status));
-//        Order savedOrder = orderRepository.save(order);
-//
-//        // Notify about order status change
-//        messagingTemplate.convertAndSend("/topic/orders/" + order.getId() + "/status", status);
-//
-//        return savedOrder;
-//    }
-//
-//    /**
-//     * Handle driver responses to order assignments
-//     */
-//    @MessageMapping("/driver/response")
-//    public void handleDriverResponse(@Payload DriverResponseDto response) {
-//        logger.info("Received response from driver {}: {}", response.getDriverId(), response);
-//
-//        String responseKey = "order-" + response.getOrderId() + "-driver-" + response.getDriverId();
-//        CompletableFuture<Boolean> responseFuture = driverResponses.get(responseKey);
-//
-//        if (responseFuture != null) {
-//            responseFuture.complete(response.isAccepted());
-//        } else {
-//            logger.warn("Received driver response for unknown order-driver combination: {}", responseKey);
-//        }
-//    }
-//}
-
-
 package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
 
 import edu.sliit.Delivery_Management_Service_Microservices_DS.config.OrderStatus;
@@ -379,11 +13,14 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -400,6 +37,9 @@ public class OrderServiceImpl implements OrderService {
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
     private final MapboxService mapboxService;
+    private final KafkaTemplate<String, OrderStatusUpdateEvent> kafkaTemplate; // Added KafkaTemplate
+    private static final String ORDER_STATUS_TOPIC = "order-status-updates"; // Kafka topic for order status updates
+
     private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
     private static final int DRIVER_RESPONSE_TIMEOUT = 45;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -581,9 +221,6 @@ public class OrderServiceImpl implements OrderService {
         return savedOrder;
     }
 
-    /**
-     * Handle response from driver about accepting/rejecting an order
-     */
     @Override
     public void handleDriverResponse(String orderId, Long driverId, boolean accepted) {
         // Create the response key that matches what's used in assignDriverToOrder
@@ -599,15 +236,98 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
+//    @Override
+//    public void updateOrderStatusComplted(long Id, String status) {
+//        logger.info("Updating order {} status to {}", Id, status);
+//        Order order = orderRepository.findById(Id)
+//                .orElseThrow(() -> new RuntimeException("Order not found with id: " + Id));
+//        logger.info("Updating order {} status to {}", Id, status);
+//        order.setStatus(status);
+//        orderRepository.save(order);
+//        if ("DELIVERED".equalsIgnoreCase(status)) {
+//            // Create Kafka event
+//            logger.debug("Creating OrderStatusUpdateEvent for orderId={}", Id);
+//            OrderStatusUpdateEvent event = new OrderStatusUpdateEvent(
+//                    order.getId(),
+//                    order.getOrderId(),
+//                    "COMPLETED",
+//                    order.getDriverId(),
+//                    new Date()
+//            );
+//            logger.info("OrderStatusUpdateEvent created: orderId={}, orderRefId={}, status={}, driverId={}",
+//                    event.getOrderId(), event.getOrderRefId(), event.getStatus(), event.getDriverId());
+//
+//            // Send Kafka message
+//            logger.debug("Sending Kafka message to topic={}: orderId={}", ORDER_STATUS_TOPIC, Id);
+//            try {
+//                CompletableFuture<SendResult<String, OrderStatusUpdateEvent>> future =
+//                        kafkaTemplate.send(ORDER_STATUS_TOPIC, String.valueOf(order.getId()), event);
+//
+//                future.whenComplete((result, ex) -> {
+//                    if (ex == null) {
+//                        logger.info("Successfully published Kafka event for order: orderId={}, topic={}, partition={}, offset={}",
+//                                Id, ORDER_STATUS_TOPIC, result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
+//                    } else {
+//                        logger.error("Failed to publish Kafka event for order: orderId={}, topic={}, error={}",
+//                                Id, ORDER_STATUS_TOPIC, ex.getMessage(), ex);
+//                        throw new RuntimeException("Kafka send failed for order " + Id, ex);
+//                    }
+//                });
+//            } catch (Exception e) {
+//                logger.error("Exception while sending Kafka event for order: orderId={}, error={}", Id, e.getMessage(), e);
+//                throw e; // Trigger retry
+//            }
+//        } else {
+//            logger.warn("Status update for order {} ignored; only 'COMPLETED' status triggers Kafka event", Id);
+//        }
+//        logger.info("Order {} status updated to {} by driver {}", Id, status);
+//    }
+
     @Override
     public void updateOrderStatusComplted(long Id, String status) {
         logger.info("Updating order {} status to {}", Id, status);
         Order order = orderRepository.findById(Id)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + Id));
-        logger.info("Updating order {} status to {}", Id, status);
+
         order.setStatus(status);
         orderRepository.save(order);
-        logger.info("Order {} status updated to {} by driver {}", Id, status);
+
+        if ("DELIVERED".equalsIgnoreCase(status)) {
+            try {
+                OrderStatusUpdateEvent event = new OrderStatusUpdateEvent(
+                        order.getId(),
+                        order.getOrderId(),
+                        "COMPLETED",
+                        order.getDriverId(),
+                        new Date()
+                );
+
+                logger.info("Creating OrderStatusUpdateEvent for orderId={}", Id);
+                logger.info("Event details: orderId={}, orderRefId={}, status={}, driverId={}",
+                        event.getOrderId(), event.getOrderRefId(), event.getStatus(), event.getDriverId());
+
+                // Send Kafka message
+                CompletableFuture<SendResult<String, OrderStatusUpdateEvent>> future =
+                        kafkaTemplate.send(ORDER_STATUS_TOPIC, String.valueOf(order.getId()), event);
+
+                future.whenComplete((result, ex) -> {
+                    if (ex == null) {
+                        logger.info("Successfully published Kafka event for order: orderId={}, topic={}, partition={}, offset={}",
+                                Id, ORDER_STATUS_TOPIC, result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
+                    } else {
+                        logger.error("Failed to publish Kafka event for order: orderId={}, topic={}, error={}",
+                                Id, ORDER_STATUS_TOPIC, ex.getMessage(), ex);
+                    }
+                });
+
+                logger.info("Order {} status updated to COMPLETED and Kafka event triggered", Id);
+            } catch (Exception e) {
+                logger.error("Exception while sending Kafka event for order: orderId={}, error={}", Id, e.getMessage(), e);
+                throw e; // Re-throw to enable retry if needed
+            }
+        } else {
+            logger.info("Status update for order {} to {} (no Kafka event triggered)", Id, status);
+        }
     }
 
     @Override
@@ -706,9 +426,7 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    /**
-     * Helper class to store driver distance information
-     */
+
     private static class DriverDistanceInfo {
         private final responseDriverAvailableDto driver;
         private final double distance;
