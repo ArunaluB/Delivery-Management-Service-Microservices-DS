@@ -12,7 +12,7 @@ import java.util.Map;
 public class OrderSummaryResponseDto {
     private int totalOrders;
     private double totalEarnings;
-    private double totalDistance; // ✅ NEW
+    private double totalDistance;
     private Map<Integer, DailySummaryDto> dailyTrips;
     private Map<Integer, MonthlySummaryDto> monthlyTrips;
 }

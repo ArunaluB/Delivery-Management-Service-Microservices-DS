@@ -13,5 +13,6 @@ public interface DriverService {
     driverAvailableUpdateDto updateDriverAvailable(driverAvailableUpdateDto availableUpdateDto);
     void updateOrderStatusComplted(Long driverId, double lat, double lng);
     usernameDriverResponse getUsernameDrivers(String username);
+    responseDriverDto verifyDriverByUsername(String username);
 
 }

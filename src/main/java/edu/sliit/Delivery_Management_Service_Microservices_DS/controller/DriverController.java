@@ -42,9 +42,7 @@ public class DriverController {
         return ResponseEntity.ok(availableDrivers);
     }
 
-
     @PutMapping("/available")
-    // @MessageMapping("/driver/driver-available")
     public ResponseEntity<driverAvailableUpdateDto> updateDriverAvailable(@RequestBody driverAvailableUpdateDto availableUpdateDto) {
         driverAvailableUpdateDto updated = driverService.updateDriverAvailable(availableUpdateDto);
         return ResponseEntity.ok(updated);
@@ -68,6 +66,12 @@ public class DriverController {
         if (updatedDriver == null) {
             return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(updatedDriver);
+    }
+
+    @PutMapping("/verify")
+    public ResponseEntity<responseDriverDto> verifyDriver(@RequestParam String username) {
+        responseDriverDto updatedDriver = driverService.verifyDriverByUsername(username);
         return ResponseEntity.ok(updatedDriver);
     }
 

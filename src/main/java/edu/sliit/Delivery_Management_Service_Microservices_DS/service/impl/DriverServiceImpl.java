@@ -9,6 +9,7 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -129,6 +130,39 @@ public class DriverServiceImpl implements DriverService {
         return modelMapper.map(savedDriver, responseDriverDto.class);
     }
 
+//    @Override
+//    public responseDriverDto verifyDriverByUsername(String username) {
+//        Driver driver = driverRepository.findByUsername(username);
+//        if (driver == null) {
+//            throw new RuntimeException("Driver not found with username: " + username);
+//        }
+//        driver.setVerified(true);
+//        Driver savedDriver = driverRepository.save(driver);
+//
+//        return modelMapper.map(savedDriver, responseDriverDto.class);
+//    }
+@Override
+public responseDriverDto verifyDriverByUsername(String username) {
+    Driver driver = driverRepository.findByUsername(username);
+    if (driver == null) {
+        throw new RuntimeException("Driver not found with username: " + username);
+    }
 
+    driver.setVerified(true);
+    Driver savedDriver = driverRepository.save(driver);
+
+    // Send email notification after verifying
+    String toEmail = savedDriver.getEmail(); // get email from the saved driver
+    String notificationUrl = "http://localhost:8091/api/notification/send-driver-registration?toEmail=" + toEmail;
+
+    try {
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.getForObject(notificationUrl, String.class);
+    } catch (Exception e) {
+        logger.error("Failed to send verification email: {}", e.getMessage());
+    }
+
+    return modelMapper.map(savedDriver, responseDriverDto.class);
+}
 
 }
