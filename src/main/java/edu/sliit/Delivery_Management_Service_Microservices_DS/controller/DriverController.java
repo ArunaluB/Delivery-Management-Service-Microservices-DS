@@ -37,16 +37,38 @@ public class DriverController {
     }
 
     @GetMapping("/username")
-    public ResponseEntity<usernameDriverResponse> getUsernameDrivers(@RequestBody String username) {
+    public ResponseEntity<usernameDriverResponse> getUsernameDrivers(@RequestParam String username) {
         usernameDriverResponse availableDrivers = driverService.getUsernameDrivers(username);
         return ResponseEntity.ok(availableDrivers);
     }
+
 
     @PutMapping("/available")
     // @MessageMapping("/driver/driver-available")
     public ResponseEntity<driverAvailableUpdateDto> updateDriverAvailable(@RequestBody driverAvailableUpdateDto availableUpdateDto) {
         driverAvailableUpdateDto updated = driverService.updateDriverAvailable(availableUpdateDto);
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/details")
+    public ResponseEntity<responseDriverDto> getDriverDetailsByUsername(@RequestParam String username) {
+        responseDriverDto driverDetails = driverService.getDriverDetailsByUsername(username);
+        if (driverDetails == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(driverDetails);
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<responseDriverDto> updateDriverByUsername(
+            @RequestParam String username,
+            @RequestBody updateDriverDto updatedDto) {
+
+        responseDriverDto updatedDriver = driverService.updateDriverByUsername(username, updatedDto);
+        if (updatedDriver == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updatedDriver);
     }
 
 }

@@ -50,8 +50,12 @@ public class DriverServiceImpl implements DriverService {
         if (driver == null) {
             return null;
         }
-        return modelMapper.map(driver, usernameDriverResponse.class);
+        usernameDriverResponse response = modelMapper.map(driver, usernameDriverResponse.class);
+        System.out.println(response.getUsername());
+        response.setName(driver.getUsername());
+        return response;
     }
+
 
 
     @Override
@@ -73,5 +77,58 @@ public class DriverServiceImpl implements DriverService {
         driver.setLongitude((lng));
         driverRepository.save(driver);
     }
+
+    @Override
+    public responseDriverDto getDriverDetailsByUsername(String username) {
+        Driver driver = driverRepository.findByUsername(username);
+        if (driver == null) {
+            return null;
+        }
+        return modelMapper.map(driver, responseDriverDto.class);
+    }
+
+
+    @Override
+    public responseDriverDto updateDriverByUsername(String username, updateDriverDto updatedDto) {
+        Driver driver = driverRepository.findByUsername(username);
+        if (driver == null) {
+            return null;
+        }
+
+        // Update fields
+        driver.setName(updatedDto.getName());
+        driver.setEmail(updatedDto.getEmail());
+        driver.setLatitude(updatedDto.getLatitude());
+        driver.setLongitude(updatedDto.getLongitude());
+        driver.setLicenseNumber(updatedDto.getLicenseNumber());
+        driver.setNic(updatedDto.getNic());
+        driver.setVehicleType(updatedDto.getVehicleType());
+        driver.setVehicleModel(updatedDto.getVehicleModel());
+        driver.setRegistrationNumber(updatedDto.getRegistrationNumber());
+        driver.setPhoneNumber(updatedDto.getPhoneNumber());
+        driver.setFirstName(updatedDto.getFirstName());
+        driver.setLastName(updatedDto.getLastName());
+        driver.setVehicleNo(updatedDto.getVehicleNo());
+        driver.setLicencePlate(updatedDto.getLicencePlate());
+        driver.setLicenceNumber(updatedDto.getLicenceNumber());
+        driver.setLicenceExpiryDate(updatedDto.getLicenceExpiryDate());
+        driver.setPassword(updatedDto.getPassword());
+        driver.setProfileImage(updatedDto.getProfileImage());
+        driver.setAddressTestimony(updatedDto.getAddressTestimony());
+        driver.setLicenseImagePathFront(updatedDto.getLicenseImagePathFront());
+        driver.setLicenseImagePathBack(updatedDto.getLicenseImagePathBack());
+        driver.setNicImagePathFront(updatedDto.getNicImagePathFront());
+        driver.setNicImagePathBack(updatedDto.getNicImagePathBack());
+        driver.setVehicleFrontPath(updatedDto.getVehicleFrontPath());
+        driver.setVehicleRearPath(updatedDto.getVehicleRearPath());
+        driver.setVehicleSidePath(updatedDto.getVehicleSidePath());
+        driver.setVehicleColor(updatedDto.getVehicleColor());
+        driver.setVerified(updatedDto.isVerified());
+
+        Driver savedDriver = driverRepository.save(driver);
+        return modelMapper.map(savedDriver, responseDriverDto.class);
+    }
+
+
 
 }
