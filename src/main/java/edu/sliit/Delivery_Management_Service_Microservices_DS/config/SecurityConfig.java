@@ -21,7 +21,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/driver").permitAll()
                         .requestMatchers("/api/order").permitAll()
-                        .requestMatchers("POST", "/api/order").authenticated()
+                        .requestMatchers("POST", "/api/order").permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();
@@ -30,7 +30,7 @@ public class SecurityConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:5173")); // Your frontend URL
+        corsConfig.setAllowedOrigins(List.of("http://localhost:5174")); // Your frontend URL
         corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         corsConfig.setAllowedHeaders(List.of("*"));
         corsConfig.setAllowCredentials(true);

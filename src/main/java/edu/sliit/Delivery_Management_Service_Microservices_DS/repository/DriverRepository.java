@@ -13,7 +13,7 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
       @Query("SELECT d FROM Driver d WHERE d.available = true")
       List<Driver> findAvailableDriversWithIdAndNameOnly();
 
-      Driver findByUsername(String username); // or List<Driver> if you expect multiple
+      Driver findByUsername(String username);
 
 }
 

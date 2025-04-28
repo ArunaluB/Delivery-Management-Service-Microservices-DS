@@ -1,5 +1,6 @@
 package edu.sliit.Delivery_Management_Service_Microservices_DS.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.config.OrderStatus;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.controller.OrderController;
 import edu.sliit.Delivery_Management_Service_Microservices_DS.entity.Order;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.web.client.RestTemplate;
 
 
 import java.time.LocalDate;
@@ -37,12 +39,18 @@ public class OrderServiceImpl implements OrderService {
     private final ModelMapper modelMapper;
     private final SimpMessagingTemplate messagingTemplate;
     private final MapboxService mapboxService;
-    private final KafkaTemplate<String, OrderStatusUpdateEvent> kafkaTemplate; // Added KafkaTemplate
-    private static final String ORDER_STATUS_TOPIC = "order-status-updates"; // Kafka topic for order status updates
+    private final KafkaTemplate<String, OrderStatusUpdateEvent> kafkaTemplate;
+    private static final String ORDER_STATUS_TOPIC = "order-status-updates";
 
     private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
     private static final int DRIVER_RESPONSE_TIMEOUT = 45;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final String SMS_ON_THE_WAY_URL = "http://localhost:8091/api/sms/send-order-on-the-way?to=";
+    private final String SMS_DELIVERED_URL = "http://localhost:8091/api/sms/send-order-delivered?to=";
+
 
     // Map to track pending driver confirmations
     private final Map<String, CompletableFuture<Boolean>> driverResponses = new ConcurrentHashMap<>();
@@ -236,53 +244,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-//    @Override
-//    public void updateOrderStatusComplted(long Id, String status) {
-//        logger.info("Updating order {} status to {}", Id, status);
-//        Order order = orderRepository.findById(Id)
-//                .orElseThrow(() -> new RuntimeException("Order not found with id: " + Id));
-//        logger.info("Updating order {} status to {}", Id, status);
-//        order.setStatus(status);
-//        orderRepository.save(order);
-//        if ("DELIVERED".equalsIgnoreCase(status)) {
-//            // Create Kafka event
-//            logger.debug("Creating OrderStatusUpdateEvent for orderId={}", Id);
-//            OrderStatusUpdateEvent event = new OrderStatusUpdateEvent(
-//                    order.getId(),
-//                    order.getOrderId(),
-//                    "COMPLETED",
-//                    order.getDriverId(),
-//                    new Date()
-//            );
-//            logger.info("OrderStatusUpdateEvent created: orderId={}, orderRefId={}, status={}, driverId={}",
-//                    event.getOrderId(), event.getOrderRefId(), event.getStatus(), event.getDriverId());
-//
-//            // Send Kafka message
-//            logger.debug("Sending Kafka message to topic={}: orderId={}", ORDER_STATUS_TOPIC, Id);
-//            try {
-//                CompletableFuture<SendResult<String, OrderStatusUpdateEvent>> future =
-//                        kafkaTemplate.send(ORDER_STATUS_TOPIC, String.valueOf(order.getId()), event);
-//
-//                future.whenComplete((result, ex) -> {
-//                    if (ex == null) {
-//                        logger.info("Successfully published Kafka event for order: orderId={}, topic={}, partition={}, offset={}",
-//                                Id, ORDER_STATUS_TOPIC, result.getRecordMetadata().partition(), result.getRecordMetadata().offset());
-//                    } else {
-//                        logger.error("Failed to publish Kafka event for order: orderId={}, topic={}, error={}",
-//                                Id, ORDER_STATUS_TOPIC, ex.getMessage(), ex);
-//                        throw new RuntimeException("Kafka send failed for order " + Id, ex);
-//                    }
-//                });
-//            } catch (Exception e) {
-//                logger.error("Exception while sending Kafka event for order: orderId={}, error={}", Id, e.getMessage(), e);
-//                throw e; // Trigger retry
-//            }
-//        } else {
-//            logger.warn("Status update for order {} ignored; only 'COMPLETED' status triggers Kafka event", Id);
-//        }
-//        logger.info("Order {} status updated to {} by driver {}", Id, status);
-//    }
-
     @Override
     public void updateOrderStatusComplted(long Id, String status) {
         logger.info("Updating order {} status to {}", Id, status);
@@ -291,9 +252,33 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(status);
         orderRepository.save(order);
+        // Get customer phone number from order
+        String customerPhone = order.getCustomerPhone();
+        if (customerPhone == null || customerPhone.isEmpty()) {
+            logger.warn("No customer phone number found for order {}", Id);
+            customerPhone = "94772187484"; // Fallback to default number
+        }
+
+        // Handle "PICKED_UP" status (order on the way)
+        if ("PICKED_UP".equalsIgnoreCase(status)) {
+            try {
+                String smsUrl = SMS_ON_THE_WAY_URL + customerPhone;
+                String response = restTemplate.getForObject(smsUrl, String.class);
+                logger.info("Sent 'on the way' SMS for order {} to {}: {}", Id, customerPhone, response);
+            } catch (Exception e) {
+                logger.error("Failed to send 'on the way' SMS for order {} to {}: {}",
+                        Id, customerPhone, e.getMessage());
+            }
+        }
 
         if ("DELIVERED".equalsIgnoreCase(status)) {
             try {
+
+                // Send SMS notification for delivered status
+                String smsUrl = SMS_DELIVERED_URL + customerPhone;
+                String response = restTemplate.getForObject(smsUrl, String.class);
+                logger.info("Sent 'delivered' SMS for order {} to {}: {}", Id, customerPhone, response);
+
                 OrderStatusUpdateEvent event = new OrderStatusUpdateEvent(
                         order.getId(),
                         order.getOrderId(),
