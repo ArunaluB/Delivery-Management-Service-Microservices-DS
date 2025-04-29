@@ -43,7 +43,7 @@ public class DriverController {
     }
 
     @PutMapping("/available")
-   // @MessageMapping("/driver/driver-available")
+    // @MessageMapping("/driver/driver-available")
     public ResponseEntity<driverAvailableUpdateDto> updateDriverAvailable(@RequestBody driverAvailableUpdateDto availableUpdateDto) {
         driverAvailableUpdateDto updated = driverService.updateDriverAvailable(availableUpdateDto);
         return ResponseEntity.ok(updated);
