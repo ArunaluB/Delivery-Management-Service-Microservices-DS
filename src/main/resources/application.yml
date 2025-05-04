@@ -1,6 +1,6 @@
 spring:
   application:
-    name: Delivery-Management-Service-Microservices-DS
+    name: Delivery-Management-Service
   datasource:
     url: jdbc:postgresql://localhost:5432/driver_manager_db
     username: postgres

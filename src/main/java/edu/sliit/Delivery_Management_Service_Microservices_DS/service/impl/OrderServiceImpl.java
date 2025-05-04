@@ -47,7 +47,6 @@ public class OrderServiceImpl implements OrderService {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final String SMS_ON_THE_WAY_URL = "http://localhost:8091/api/sms/send-order-on-the-way?to=";
     private final String SMS_DELIVERED_URL = "http://localhost:8091/api/sms/send-order-delivered?to=";
 
@@ -308,7 +307,7 @@ public class OrderServiceImpl implements OrderService {
                 logger.info("Order {} status updated to COMPLETED and Kafka event triggered", Id);
             } catch (Exception e) {
                 logger.error("Exception while sending Kafka event for order: orderId={}, error={}", Id, e.getMessage(), e);
-                throw e; // Re-throw to enable retry if needed
+                throw e;
             }
         } else {
             logger.info("Status update for order {} to {} (no Kafka event triggered)", Id, status);

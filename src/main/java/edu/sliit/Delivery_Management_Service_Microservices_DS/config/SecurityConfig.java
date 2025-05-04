@@ -21,7 +21,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/driver").permitAll()
                         .requestMatchers("/api/order").permitAll()
-                        .requestMatchers("POST", "/api/order").permitAll()
                         .anyRequest().permitAll()
                 );
         return http.build();
